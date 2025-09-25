@@ -20,7 +20,7 @@ class CampesinosSimulacion extends FlameGame {
     cam.viewfinder.anchor = Anchor.center;
     cam.viewfinder.position = Vector2(250, 170);
 
-    // ⚡️ Definir waypoints (ajusta las coordenadas a tu mapa)
+    //  Definir waypoints (ajusta las coordenadas a tu mapa)
     final waypoints = [
       Vector2(80, 240), // hogar
       Vector2(165, 240), // camino 
@@ -48,3 +48,4 @@ class CampesinosSimulacion extends FlameGame {
     return super.onLoad();
   }
 }
+
