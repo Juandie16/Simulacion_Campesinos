@@ -3,6 +3,7 @@ import 'package:flame/components.dart';
 import 'package:flame/game.dart';
 import 'package:campesinos_simulacion/mapa.dart';
 import 'package:campesinos_simulacion/campesino.dart';
+import 'sim_clock.dart';
 
 class CampesinosSimulacion extends FlameGame {
   late final CameraComponent cam;
@@ -20,27 +21,32 @@ class CampesinosSimulacion extends FlameGame {
     cam.viewfinder.anchor = Anchor.center;
     cam.viewfinder.position = Vector2(250, 170);
 
-    //  Definir waypoints (ajusta las coordenadas a tu mapa)
+    // Definir waypoints (ajusta las coordenadas a tu mapa)
     final waypoints = [
       Vector2(80, 240), // hogar
       Vector2(165, 240), // camino 
       Vector2(165, 170), // camino
       Vector2(230, 170), // camino
-      Vector2(230, 260), // camino
+      Vector2(230, 260), // cultivo
       Vector2(240, 130), // camino
       Vector2(410, 130), // camino
-      Vector2(410, 80), // camino
+      Vector2(410, 80), // mercado
       Vector2(410, 130), // camino
       Vector2(240, 130), // camino
       Vector2(230, 170), // camino
-      Vector2(165, 170), // mercado
+      Vector2(165, 170), // camino
       Vector2(165, 240), // camino
     ];
+
+
+      // Creación del reloj y añadirlo al juego
+    final clock = SimClock();
+    world.add(clock);
       
 
     
 
-    // Crear campesino en el primer waypoint
+    // Creación campesino en el primer waypoint y añadirlo al juego
     campesino = Campesino(waypoints.first, waypoints);
     world.add(campesino);
 
@@ -48,4 +54,3 @@ class CampesinosSimulacion extends FlameGame {
     return super.onLoad();
   }
 }
-
