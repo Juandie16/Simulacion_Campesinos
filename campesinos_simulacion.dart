@@ -1,56 +1,55 @@
 import 'dart:async';
 import 'package:flame/components.dart';
+import 'package:flame_tiled/flame_tiled.dart';
 import 'package:flame/game.dart';
-import 'package:campesinos_simulacion/mapa.dart';
-import 'package:campesinos_simulacion/campesino.dart';
+import 'mapa.dart';
+import 'campesino.dart';
 import 'sim_clock.dart';
+import 'game_state.dart';
 
 class CampesinosSimulacion extends FlameGame {
-  late final CameraComponent cam;
-  final world = Mapa();
+  final GameState gameState;
+  final double dayDurationSeconds;
   late Campesino campesino;
+  final Mapa world = Mapa();
+
+  CampesinosSimulacion({required this.gameState, this.dayDurationSeconds = 120.0});
 
   @override
   FutureOr<void> onLoad() async {
-    // Cámara
-    cam = CameraComponent.withFixedResolution(
-      world: world,
-      width: 640,
-      height: 360,
-    );
-    cam.viewfinder.anchor = Anchor.center;
-    cam.viewfinder.position = Vector2(250, 170);
-
-    // Definir waypoints (ajusta las coordenadas a tu mapa)
-    final waypoints = [
-      Vector2(80, 240), // hogar
-      Vector2(165, 240), // camino 
-      Vector2(165, 170), // camino
-      Vector2(230, 170), // camino
-      Vector2(230, 260), // cultivo
-      Vector2(240, 130), // camino
-      Vector2(410, 130), // camino
-      Vector2(410, 80), // mercado
-      Vector2(410, 130), // camino
-      Vector2(240, 130), // camino
-      Vector2(230, 170), // camino
-      Vector2(165, 170), // camino
-      Vector2(165, 240), // camino
-    ];
-
-
-      // Creación del reloj y añadirlo al juego
-    final clock = SimClock();
-    world.add(clock);
-      
-
+    add(world); // añade el world (que carga el mapa)
     
 
-    // Creación campesino en el primer waypoint y añadirlo al juego
-    campesino = Campesino(waypoints.first, waypoints);
-    world.add(campesino);
+    // Esperar a que el mapa esté cargado en el World
+    await world.onLoad();
 
-    addAll([world, cam]);
+    // Extraer waypoints del mapa cargado en el World
+    final mapa = world.mapa;
+    mapa.priority = 0;
+    final objectLayer = mapa.tileMap.getLayer<ObjectGroup>('Waypoints');
+    final waypoints = <Waypoint>[];
+    if (objectLayer != null) {
+      for (final obj in objectLayer.objects) {
+        if ((obj.name).isEmpty) continue;
+        waypoints.add(Waypoint(Vector2(obj.x.toDouble(), obj.y.toDouble()), obj.name));
+        print('Waypoint: ${obj.name} -> (${obj.x}, ${obj.y})');
+      }
+    }
+  // crear campesino con esos waypoints
+  campesino = Campesino(waypoints, gameState);
+  campesino.priority = 100; // valor alto para dibujarse encima
+  world.add(campesino);
+  // Agregar reloj que actualiza GameState (hora y producción) al world para sincronizar updates
+  final clock = SimClock(gameState: gameState, dayDurationSeconds: dayDurationSeconds);
+  
+  world.add(clock);
+
+    // Cámara (opcional): fijarla sobre el campesino al inicio
+    final cam = CameraComponent.withFixedResolution(world: world, width: 640, height: 360);
+    cam.viewfinder.anchor = Anchor.center;
+    cam.viewfinder.position = Vector2(440 / 2, 360 / 2);
+    add(cam);
+
     return super.onLoad();
   }
 }
