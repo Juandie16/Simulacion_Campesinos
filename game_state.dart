@@ -37,25 +37,33 @@ class GameState extends ChangeNotifier {
   }
 
   /// Incrementa el contador de papas y notifica a la UI.
+  /// (Solo se usa directamente desde UI; no desde loops de producción)
   void addPapas(int cantidad) {
+    if (cantidad == 0) return;
     papas += cantidad;
     notifyListeners();
   }
 
   /// Añade kilos de yuca al inventario.
+  /// (Solo se usa directamente desde UI; no desde loops de producción)
   void addYuca(int kg) {
+    if (kg == 0) return;
     yucaKg += kg;
     notifyListeners();
   }
 
   /// Añade kilos de zanahoria al inventario.
+  /// (Solo se usa directamente desde UI; no desde loops de producción)
   void addZanahoria(int kg) {
+    if (kg == 0) return;
     zanahoriaKg += kg;
     notifyListeners();
   }
 
   /// Añade kilos de lechuga al inventario.
+  /// (Solo se usa directamente desde UI; no desde loops de producción)
   void addLechuga(int kg) {
+    if (kg == 0) return;
     lechugaKg += kg;
     notifyListeners();
   }
@@ -95,29 +103,39 @@ class GameState extends ChangeNotifier {
   void addHorasActividad(String actividad, double horas) {
     if (actividad != 'Plantar') return;
 
+    // Flag para detectar si hubo cambios en recursos y notificar solo una vez
+    bool recursosCambiaron = false;
+
     _horasAcumPapas += horas;
     _horasAcumYuca += horas;
     _horasAcumZanahoria += horas;
     _horasAcumLechuga += horas;
 
-    // Consumir umbrales y producir recursos cuando corresponda
+    // Consumir umbrales y producir recursos directamente sin notificar en cada iteración
     while (_horasAcumPapas >= 120.0) {
       _horasAcumPapas -= 120.0;
-      addPapas(1000);
+      papas += 1000;
+      recursosCambiaron = true;
     }
     while (_horasAcumYuca >= 150.0) {
       _horasAcumYuca -= 150.0;
-      addYuca(1);
+      yucaKg += 1;
+      recursosCambiaron = true;
     }
     while (_horasAcumZanahoria >= 20.0) {
       _horasAcumZanahoria -= 20.0;
-      addZanahoria(1);
+      zanahoriaKg += 1;
+      recursosCambiaron = true;
     }
     while (_horasAcumLechuga >= 10.0) {
       _horasAcumLechuga -= 10.0;
-      addLechuga(1);
+      lechugaKg += 1;
+      recursosCambiaron = true;
     }
 
-    notifyListeners();
+    // Notificar solo una vez si realmente hubo cambios en recursos
+    if (recursosCambiaron) {
+      notifyListeners();
+    }
   }
 }
