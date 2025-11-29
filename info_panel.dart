@@ -1,4 +1,6 @@
+// Widgets de Flutter para la interfaz de usuario
 import 'package:flutter/material.dart';
+// Modelo de estado compartido del juego
 import 'game_state.dart';
 
 class InfoPanel extends StatefulWidget {
@@ -98,9 +100,12 @@ class _InfoPanelState extends State<InfoPanel> {
 
   @override
   Widget build(BuildContext context) {
+    // Colores principales del panel (se usan repetidamente)
     final primary = Colors.teal.shade600;
     final accent = Colors.amber.shade600;
 
+    // El panel principal contiene una zona desplazable con ajustes y
+    // controles, y un panel de recursos fijo en la parte inferior.
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
@@ -112,12 +117,13 @@ class _InfoPanelState extends State<InfoPanel> {
       ),
       child: Column(
         children: [
-          // Encabezado y contenido desplazable
+          // Encabezado y contenido desplazable (ajustes)
           Expanded(
             child: SingleChildScrollView(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  // Título del panel
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
@@ -133,120 +139,121 @@ class _InfoPanelState extends State<InfoPanel> {
 
                   const SizedBox(height: 12),
 
+                  // Caja con hora y estado actuales
                   Card(
-              color: Colors.white,
-              elevation: 4,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-              child: Padding(
-                padding: const EdgeInsets.all(12.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Icon(Icons.access_time, color: primary),
-                        const SizedBox(width: 8),
-                        Text('Hora: ', style: TextStyle(color: Colors.grey[700])),
-                        Text(widget.gameState.hora,
-                            style: TextStyle(fontWeight: FontWeight.bold, color: primary)),
-                        const Spacer(),
-                        Icon(Icons.person, color: primary),
-                        const SizedBox(width: 6),
-                        Flexible(
-                            child: Text(widget.gameState.estadoCampesino,
-                                overflow: TextOverflow.ellipsis,
-                                style: const TextStyle(fontWeight: FontWeight.bold))),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            ),
-
-            const SizedBox(height: 12),
-
-            const Text('Ajuste de horas por actividad (máx. 24)',
-                style: TextStyle(fontWeight: FontWeight.bold)),
-            const SizedBox(height: 8),
-
-            // Sliders en tarjetas separadas
-            ...activities.map((act) {
-              final others = totalHours - durations[act]!;
-              final maxForThis = (24 - others);
-              final icon = act == 'Dormir'
-                  ? Icons.bedtime
-                  : (act == 'Plantar' ? Icons.grass : Icons.shopping_bag);
-              return Card(
-                color: Colors.white,
-                elevation: 2,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    color: Colors.white,
+                    elevation: 4,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    child: Padding(
+                      padding: const EdgeInsets.all(12.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Row(children: [Icon(icon, color: primary), const SizedBox(width: 8), Text(act)]),
-                          Text('${durations[act]} h', style: const TextStyle(fontWeight: FontWeight.bold)),
+                          Row(
+                            children: [
+                              Icon(Icons.access_time, color: primary),
+                              const SizedBox(width: 8),
+                              Text('Hora: ', style: TextStyle(color: Colors.grey[700])),
+                              Text(widget.gameState.hora,
+                                  style: TextStyle(fontWeight: FontWeight.bold, color: primary)),
+                              const Spacer(),
+                              Icon(Icons.person, color: primary),
+                              const SizedBox(width: 6),
+                              Flexible(
+                                  child: Text(widget.gameState.estadoCampesino,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: const TextStyle(fontWeight: FontWeight.bold))),
+                            ],
+                          ),
                         ],
                       ),
-                      SliderTheme(
-                        data: SliderTheme.of(context).copyWith(
-                          activeTrackColor: primary,
-                          thumbColor: accent,
-                          overlayColor: accent.withOpacity(0.2),
-                          valueIndicatorColor: primary,
+                    ),
+                  ),
+
+                  const SizedBox(height: 12),
+
+                  const Text('Ajuste de horas por actividad (máx. 24)',
+                      style: TextStyle(fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 8),
+
+                  // Sliders en tarjetas separadas
+                  ...activities.map((act) {
+                    final others = totalHours - durations[act]!;
+                    final maxForThis = (24 - others);
+                    final icon = act == 'Dormir'
+                        ? Icons.bedtime
+                        : (act == 'Plantar' ? Icons.grass : Icons.shopping_bag);
+                    return Card(
+                      color: Colors.white,
+                      elevation: 2,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Row(children: [Icon(icon, color: primary), const SizedBox(width: 8), Text(act)]),
+                                Text('${durations[act]} h', style: const TextStyle(fontWeight: FontWeight.bold)),
+                              ],
+                            ),
+                            SliderTheme(
+                              data: SliderTheme.of(context).copyWith(
+                                activeTrackColor: primary,
+                                thumbColor: accent,
+                                overlayColor: accent.withOpacity(0.2),
+                                valueIndicatorColor: primary,
+                              ),
+                              child: Slider(
+                                value: durations[act]!.toDouble(),
+                                min: 0,
+                                max: maxForThis.toDouble().clamp(1, 24).toDouble(),
+                                divisions: maxForThis > 0 ? maxForThis : 1,
+                                label: '${durations[act]} h',
+                                onChanged: (v) => _onSliderChanged(act, v),
+                              ),
+                            ),
+                          ],
                         ),
-                        child: Slider(
-                          value: durations[act]!.toDouble(),
-                          min: 0,
-                          max: maxForThis.toDouble().clamp(1, 24).toDouble(),
-                          divisions: maxForThis > 0 ? maxForThis : 1,
-                          label: '${durations[act]} h',
-                          onChanged: (v) => _onSliderChanged(act, v),
-                        ),
+                      ),
+                    );
+                  }).toList(),
+
+                  const SizedBox(height: 8),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text('Horas asignadas', style: TextStyle(fontWeight: FontWeight.bold)),
+                          const SizedBox(height: 4),
+                          Text('$totalHours / 24 h'),
+                        ],
+                      ),
+                      ElevatedButton.icon(
+                        onPressed: _resetDurations,
+                        icon: const Icon(Icons.restart_alt),
+                        label: const Text('Restablecer'),
+                        style: ElevatedButton.styleFrom(backgroundColor: primary),
                       ),
                     ],
                   ),
-                ),
-              );
-            }).toList(),
 
-            const SizedBox(height: 8),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text('Horas asignadas', style: TextStyle(fontWeight: FontWeight.bold)),
-                    const SizedBox(height: 4),
-                    Text('$totalHours / 24 h'),
-                  ],
-                ),
-                ElevatedButton.icon(
-                  onPressed: _resetDurations,
-                  icon: const Icon(Icons.restart_alt),
-                  label: const Text('Restablecer'),
-                  style: ElevatedButton.styleFrom(backgroundColor: primary),
-                ),
-              ],
-            ),
+                  const SizedBox(height: 8),
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(8),
+                    child: LinearProgressIndicator(
+                      value: (totalHours / 24.0).clamp(0.0, 1.0),
+                      minHeight: 10,
+                      color: primary,
+                      backgroundColor: Colors.grey.shade200,
+                    ),
+                  ),
 
-            const SizedBox(height: 8),
-            ClipRRect(
-              borderRadius: BorderRadius.circular(8),
-              child: LinearProgressIndicator(
-                value: (totalHours / 24.0).clamp(0.0, 1.0),
-                minHeight: 10,
-                color: primary,
-                backgroundColor: Colors.grey.shade200,
-              ),
-            ),
-
-            const SizedBox(height: 12),
+                  const SizedBox(height: 12),
                 ],
               ),
             ),
@@ -269,22 +276,22 @@ class _InfoPanelState extends State<InfoPanel> {
               children: [
                 Chip(
                   avatar: const Icon(Icons.local_pizza, size: 18),
-                  label: Text('${widget.gameState.papas} kg papas'),
+                  label: Text('${widget.gameState.papas} papas'),
                   backgroundColor: Colors.yellow.shade100,
                 ),
                 Chip(
                   avatar: const Icon(Icons.crop, size: 18),
-                  label: Text('${widget.gameState.yucaKg} kg yuca'),
+                  label: Text('${widget.gameState.yucaKg} yuca'),
                   backgroundColor: Colors.orange.shade50,
                 ),
                 Chip(
                   avatar: const Icon(Icons.emoji_food_beverage, size: 18),
-                  label: Text('${widget.gameState.zanahoriaKg} kg zanah.'),
+                  label: Text('${widget.gameState.zanahoriaKg} zanah.'),
                   backgroundColor: Colors.deepOrange.shade50,
                 ),
                 Chip(
                   avatar: const Icon(Icons.grass, size: 18),
-                  label: Text('${widget.gameState.lechugaKg} kg lech.'),
+                  label: Text('${widget.gameState.lechugaKg} lech.'),
                   backgroundColor: Colors.green.shade50,
                 ),
               ],

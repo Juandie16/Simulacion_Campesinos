@@ -1,5 +1,8 @@
+// Low-level drawing and vector utilities
 import 'dart:ui';
+// Flame components (PositionComponent, Anchor, Vector2, etc.)
 import 'package:flame/components.dart';
+// Shared game state used to read activity durations and report estado
 import 'game_state.dart';
 
 /// Estructura para punto de recorrido con nombre
@@ -9,9 +12,13 @@ class Waypoint {
   Waypoint(this.pos, this.name);
 }
 
-/// Campesino: se mueve por waypoints y espera en aquellos que tienen actividad.
-/// - gameState: referencia para leer activityDurations (horas simuladas por actividad)
-/// - dayDurationSeconds: segundos reales que dura un día simulado (ej. 120s para 24h)
+/// Campesino: entidad que recorre una lista de `Waypoint`.
+/// Comportamiento:
+/// - Se desplaza entre waypoints con una velocidad fija.
+/// - Al llegar a waypoints que representan actividades (cultivo/mercado/hogar)
+///   inicia un periodo de espera cuya duración se toma desde `GameState`.
+/// - Mientras espera puede reportar horas efectivas de actividad a `GameState`
+///   (p. ej. para producir recursos cuando esté 'Plantar').
 class Campesino extends PositionComponent {
   double speed = 60; // px/s
   final List<Waypoint> waypoints;
@@ -41,7 +48,8 @@ class Campesino extends PositionComponent {
     size = Vector2.all(16);
     anchor = Anchor.center;
     priority = 200; // dibujar encima del mapa
-    _updateEstadoForCurrentWaypoint(); // setear estado inicial
+    // Inicializar el estado textual según el waypoint en el que se inicia
+    _updateEstadoForCurrentWaypoint();
   }
 
   // Helpers para detectar palabras clave en nombres de waypoints
@@ -72,7 +80,9 @@ class Campesino extends PositionComponent {
       final homeKeywords = ['hogar', 'casa', 'home'];
       final hogarIndex = waypoints.indexWhere((w) => _nameContainsAny(w.name.toLowerCase(), homeKeywords));
       if (hogarIndex != -1 && currentTarget != hogarIndex) {
-        // Activar modo "regresando a casa" y ajustar la dirección
+        // Activar modo "regresando a casa" y ajustar la dirección. Esto
+        // hará que el campesino avance paso a paso hacia el waypoint hogar
+        // en lugar de saltar directamente.
         _setReturningHome(hogarIndex);
         gameState.setEstado("Regresando al hogar para dormir");
       }
@@ -82,20 +92,22 @@ class Campesino extends PositionComponent {
     if (isWaiting) {
       // Mientras espera, reportar las horas simuladas efectivas a GameState
       // para que se produzcan recursos solo si la actividad lo requiere.
+      // `simulatedHoursDelta` convierte segundos reales `dt` a horas simuladas.
       final simulatedHoursDelta = (dt / dayDurationSeconds) * 24.0;
       if (currentActivity != null) {
+        // Reporta solo la actividad actual (ej. 'Plantar')
         gameState.addHorasActividad(currentActivity!, simulatedHoursDelta);
       }
 
+      // Restar tiempo real y comprobar si terminó la espera
       remainingWaitReal -= dt;
       if (remainingWaitReal <= 0) {
         isWaiting = false;
         remainingWaitReal = 0;
         // Limpiar actividad actual al terminar la espera
         currentActivity = null;
-        // Si estaba durmiendo, reinicia el día (volver a trabajar)
+        // Actualizar estado textual y comportamiento tras finalizar
         gameState.setEstado("Despertando y preparándose para el trabajo");
-        // Si terminó de dormir, ya no está regresando a casa
         returningHome = false;
         _advanceTarget();
         _updateEstadoForCurrentWaypoint();
@@ -107,6 +119,8 @@ class Campesino extends PositionComponent {
     final target = waypoints[currentTarget].pos;
     final dir = (target - position);
 
+    // Si está suficientemente cerca del waypoint objetivo, iniciar la lógica
+    // de espera/actividad en ese waypoint; en caso contrario continuar moviendo.
     if (dir.length < 2) {
       _startWaitingIfNeededForCurrentWaypoint();
     } else {
@@ -116,6 +130,8 @@ class Campesino extends PositionComponent {
   }
 
   // Decide si al llegar debe iniciar un periodo de espera (según activityDurations)
+  // Decide si al llegar debe iniciar un periodo de espera (según activityDurations)
+  // y si esa espera debe reportar actividad (p.ej. Plantar) al GameState.
  void _startWaitingIfNeededForCurrentWaypoint() {
   final name = waypoints[currentTarget].name.toLowerCase();
 
@@ -125,6 +141,7 @@ class Campesino extends PositionComponent {
   final marketKeywords = ['mercad', 'market', 'plaza'];
   final homeKeywords = ['hogar', 'casa', 'home'];
 
+  // Detectar tipo de waypoint por palabras clave
   if (_nameContainsAny(name, plantKeywords)) {
     actividad = 'Plantar';
   } else if (_nameContainsAny(name, marketKeywords)) {
@@ -140,17 +157,19 @@ class Campesino extends PositionComponent {
     final homeKeywords = ['hogar', 'casa', 'home'];
     final isHome = _nameContainsAny(name, homeKeywords);
     if (returningHome && !isHome) {
-      // avanzar al siguiente waypoint en la ruta hacia el hogar
+      // Avanzar al siguiente paso hacia el hogar; no iniciar actividad.
       _advanceTarget();
       _updateEstadoForCurrentWaypoint();
       return;
     }
 
+    // Si la actividad tiene horas asignadas, iniciar la espera y registrar
+    // el tipo de actividad para que el `update` reporte horas efectivas.
     if (horasSim > 0) {
       final secondsPerSimHour = dayDurationSeconds / 24.0;
       remainingWaitReal = horasSim * secondsPerSimHour;
       isWaiting = true;
-      currentActivity = actividad; // recordar qué actividad se está realizando
+      currentActivity = actividad; // recordar la actividad que se realiza
       gameState.setEstado("${_actividadLabel(actividad)} ($horasSim h)");
       return;
     }
@@ -160,6 +179,8 @@ class Campesino extends PositionComponent {
   _updateEstadoForCurrentWaypoint();
 }
   // Actualiza gameState.estado según el waypoint actual (sin iniciar espera)
+  // Actualiza solo la etiqueta `estadoCampesino` en `GameState` según el
+  // waypoint actual sin iniciar períodos de espera.
   void _updateEstadoForCurrentWaypoint() {
     final name = waypoints[currentTarget].name.toLowerCase();
     String estado;
@@ -181,6 +202,7 @@ class Campesino extends PositionComponent {
     gameState.setEstado(estado);
   }
 
+  // Traduce la clave de actividad a una etiqueta legible para mostrar en UI.
   String _actividadLabel(String actividadKey) {
     // etiquetas legibles para GameState
     switch (actividadKey) {
@@ -198,15 +220,17 @@ class Campesino extends PositionComponent {
   // Avanza el índice `currentTarget` en la dirección indicada.
   // Si llega a un extremo invierte la dirección en lugar de saltar
   // directamente al otro extremo (evita "teletransportes").
+  // Avanza el índice `currentTarget` respetando la dirección y evitando
+  // "teletransportes": al llegar a un extremo invierte la dirección.
   void _advanceTarget() {
     if (waypoints.isEmpty) return;
     final next = currentTarget + direction;
     if (next < 0) {
-      // estamos antes del inicio: invertir y moverse hacia adelante
+      // Estamos antes del inicio: invertir dirección y mover hacia adelante
       direction = 1;
       currentTarget = 1.clamp(0, waypoints.length - 1);
     } else if (next >= waypoints.length) {
-      // llegamos al final: invertir dirección y mover hacia atrás
+      // Llegamos al extremo final: invertir dirección y moverse hacia atrás
       direction = -1;
       currentTarget = (waypoints.length - 2).clamp(0, waypoints.length - 1);
     } else {
@@ -217,6 +241,8 @@ class Campesino extends PositionComponent {
   // Configura el modo "regresando a casa" estableciendo `direction`
   // para avanzar paso a paso hacia `hogarIndex` y moviéndose al primer
   // paso en esa dirección.
+  // Prepara al campesino para regresar al hogar avanzando paso a paso hacia
+  // `hogarIndex` (no salta directamente).
   void _setReturningHome(int hogarIndex) {
     if (waypoints.isEmpty) return;
     returningHome = true;
